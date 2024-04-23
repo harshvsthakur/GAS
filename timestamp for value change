@@ -1,0 +1,43 @@
+function onEdit(e) {
+  // Check if the edit is on Sheet2 and the value changed to "YES"
+  if (e.range.getSheet().getName() === "Sheet2" && e.value === "YES") {
+    // Get the sheet and range of the edit
+    const sheet = e.range.getSheet();
+    const range = e.range;
+    const timestamp = new Date();
+
+    // Log edit details on sheet 2
+    Logger.log(`Sheet 2 - Row: ${range.getRow()}, Column: ${range.getColumn()}, Old Value: ${e.oldValue}, New Value: ${e.value} - ${timestamp}`);
+
+    // Retrieve unit ID and proceed with remaining logic
+    const row = range.getRow();
+    const unitId = sheet.getRange(row, 4).getValue(); // Unit ID in column 4
+
+    // Find the unit ID on sheet 1
+    const sheet1 = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet1");
+    const unitIndex = findUnitIndex(sheet1, unitId);
+
+    // Check if unit ID is found
+    if (unitIndex !== -1) {
+      // Write the timestamp to the corresponding location in sheet 1
+      sheet1.getRange(unitIndex, range.getColumn()-1).setValue(timestamp);
+
+      // Log timestamp update on sheet 1 (optional)
+      // Logger.log(`Timestamp updated on Sheet 1 - Row: ${unitIndex}, Column: 4 for Unit ID: ${unitId} - ${timestamp}`);
+    } else {
+      // Log unit ID not found
+      Logger.log(`Unit ID: ${unitId} not found on Sheet 1 - ${timestamp}`);
+    }
+  }
+}
+
+// Function to find the row index of the unit ID in sheet 1
+function findUnitIndex(sheet, unitId) {
+  const data = sheet.getDataRange().getValues();
+  for (let i = 0; i < data.length; i++) {
+    if (data[i][3] === unitId) { // Check unit ID in column 4
+      return i + 1; // Add 1 to account for header row
+    }
+  }
+  return -1; // Unit ID not found
+}
