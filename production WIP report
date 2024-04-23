@@ -1,0 +1,89 @@
+function sendChartsWithSheetData() {
+  const wb = SpreadsheetApp.getActiveSpreadsheet();
+  var access = wb.getSheetByName("DASHBOARD");
+  const charts = access.getCharts();
+
+  const chartBlobs = new Array();
+  const emailImages = {};
+  let emailBody = "";
+
+  // Add data table from range M3 to W6 to the email body
+  const rangeDataMW = access.getRange("M3:W6").getValues();
+
+  emailBody += "<div style='margin-right: 20px;'>"; // Start of table div
+  emailBody += "<b>WIP Count</b><br>"; // Table title
+  emailBody += "<table style='border-collapse: collapse; border: 1px solid #000; width: 100%;'>"; // Table start tag
+  rangeDataMW.forEach(function(row, rowIndex) {
+    emailBody += "<tr>";
+    row.forEach(function(cell, colIndex) {
+      if (rowIndex === 0) {
+        emailBody += "<th style='border: 1px solid #000; padding: 5px; font-weight: bold;'>" + cell + "</th>";
+      } else {
+        if (colIndex === 0 && cell instanceof Date) { // Check if it's a date in the first column
+          emailBody += "<td style='border: 1px solid #000; padding: 5px;'>" + cell.toDateString() + "</td>"; // Convert date to string
+        } else {
+          emailBody += "<td style='border: 1px solid #000; padding: 5px;'>" + cell + "</td>";
+        }
+      }
+    });
+    emailBody += "</tr>";
+  });
+  emailBody += "</table>"; // Table end tag
+  emailBody += "</div>"; // End of table div
+
+  // Add chart images to the email body
+  emailBody += "<div style='display: flex; flex-wrap: wrap;'>"; // Start of flex container for charts
+  // Reversing the loop to change the order of charts
+  for (let i = charts.length - 1; i >= 0; i--) {
+    // Add chart image to the email body
+    chartBlobs[i] = charts[i].getAs("image/png");
+    emailBody += "<div style='margin-right: 20px;'>"; // Start of chart div
+    emailBody += "<img src='cid:chart" + i + "' style='max-width: 100%; height: auto;'><br>"; // Chart image
+    emailBody += "</div>"; // End of chart div
+
+    // Add chart image to inlineImages object
+    emailImages["chart" + i] = chartBlobs[i];
+  }
+  emailBody += "</div>"; // End of flex container for charts
+
+  // Add data tables from ranges G3:K9 and A3:E11 to the email body
+  emailBody += "<div style='display: flex; flex-wrap: wrap; margin-top: 20px;'>"; // Start of flex container for tables
+  const tableRanges = ["G3:K9", "A3:E11"];
+  tableRanges.forEach(function(rangeStr) {
+    const rangeData = access.getRange(rangeStr).getValues();
+
+    emailBody += "<div style='margin-right: 20px;'>"; // Start of table div
+    emailBody += "<table style='border-collapse: collapse; border: 1px solid #000; width: 100%;'>"; // Table start tag
+    rangeData.forEach(function(row, rowIndex) {
+      emailBody += "<tr>";
+      row.forEach(function(cell, colIndex) {
+        if (rowIndex === 0) {
+          emailBody += "<th style='border: 1px solid #000; padding: 5px; font-weight: bold;'>" + cell + "</th>";
+        } else {
+          // Check if the row is the second row (index 1) and column is greater than the first one (index 0), if so, format the cell as percentage
+          if (rowIndex === 1 && colIndex > 0) {
+            emailBody += "<td style='border: 1px solid #000; padding: 5px;'>" + (cell * 100).toFixed(2) + "%" + "</td>"; // Assuming the cell values are already in decimal format
+          } else {
+            if (colIndex === 0 && cell instanceof Date) { // Check if it's a date in the first column
+              emailBody += "<td style='border: 1px solid #000; padding: 5px;'>" + cell.toDateString() + "</td>"; // Convert date to string
+            } else {
+              emailBody += "<td style='border: 1px solid #000; padding: 5px;'>" + cell + "</td>";
+            }
+          }
+        }
+      });
+      emailBody += "</tr>";
+    });
+    emailBody += "</table>"; // Table end tag
+    emailBody += "</div>"; // End of table div
+  });
+  emailBody += "</div>"; // End of flex container for tables
+
+  // Send email with chart images and sheet data
+  MailApp.sendEmail({
+    to: "person@mail.com",
+    subject: "Production Report",
+    htmlBody: emailBody,
+    inlineImages: emailImages,
+  });
+}
