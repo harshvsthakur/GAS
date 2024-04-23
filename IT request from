@@ -1,0 +1,47 @@
+function onEdit(e) {
+  if (!e) {
+    Logger.log("Event object is undefined.");
+    return;
+  }
+  
+  var sheet = e.source.getActiveSheet();
+  var range = e.range;
+  var row = range.getRow();
+  var col = range.getColumn();
+  
+  Logger.log("Edited row: " + row + ", col: " + col);
+  
+  // Check if the edited cell is in column N and the new value is "Done"
+  if (col == 14 && e.value == "Done") { // Column N is the 14th column
+    // Get the current date and time
+    var now = new Date();
+    var formattedDateTime = Utilities.formatDate(now, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+    
+    // Write the date and time to the corresponding cell in column O
+    sheet.getRange(row, col + 1).setValue(formattedDateTime);
+    
+    Logger.log("Date and time updated: " + formattedDateTime);
+    
+    // Get the email address from column B
+    var emailAddress = sheet.getRange(row, 2).getValue();
+    
+    Logger.log("Email Address: " + emailAddress);
+    
+    // Get the name from column F
+    var name = sheet.getRange(row, 6).getValue();
+    
+    Logger.log("Name: " + name);
+    
+    // Compose the email subject and body
+    var subject = "Service request resolved";
+    var body = "Dear " + name + ",\n\nYour request has been resolved and closed on " + formattedDateTime + "\n\nRegards";
+    
+    Logger.log("Email Subject: " + subject);
+    Logger.log("Email Body: " + body);
+    
+    // Send the email
+    MailApp.sendEmail(emailAddress, subject, body);
+    
+    Logger.log("Email sent!");
+  }
+}
