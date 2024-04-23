@@ -1,0 +1,47 @@
+function onEdit(e) {
+ addTimestamp(e);
+}
+function addTimestamp (e) {
+  //variables
+  var startRow = 5;
+  var targetStartColumn = 17; //Column Q
+  var targetEndColumn = 35; // Column AI
+  var ws = "FULL KIT CHECK";
+
+  //get modified row and column
+
+  var row = e.range.getRow();
+  var col = e.range.getColumn();
+  Logger.log("Row: " + row+"Col:"+col);
+  if ((col>=targetStartColumn && col<targetEndColumn) && row>=startRow && e.source.getActiveSheet().getName() === ws && (e.range.getValue()=="YES" || e.range.getValue()=="APPROVED" || e.range.getValue()=="N/A") )
+  {
+    var currentDate = new Date();
+    //Find the row on the target sheet "timestamp" sheet
+    var targetSheet = e.source.getSheetByName("timestamp");
+    var unitCode = e.source.getActiveSheet().getRange (row, 4).getValue();
+    Logger.log("Item " + unitCode);
+
+    var foundRow = vlookUp(targetSheet,unitCode);
+    
+    Logger.log("Row " + foundRow);
+    if(targetSheet.getRange (foundRow, col).getValue () == "") 
+    {
+      targetSheet.getRange (foundRow+4, col).setValue(currentDate);
+    } //END IF check if date created exists
+  }//END IF check column, row, worksheet
+}//END function
+
+
+function vlookUp(targetSheet, searchValue){
+
+  var data = targetSheet.getRange('D4:D').getValues();
+
+  var dataList = data.map(x => x[0]);
+  //Logger.log("dataList: " + dataList);
+  var index = dataList.indexOf(searchValue);
+
+  if (index !== -1) {
+    Logger.log("FoundValue: " + dataList[index]);
+      return index;
+  }
+}
